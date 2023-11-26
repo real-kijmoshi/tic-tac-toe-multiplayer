@@ -1,0 +1,7 @@
+- Add README
+- Add custom matches
+
+
+- Save all games
+- Train AI 
+- Add bots

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+<style>
+    body {
+        background-color: #282c34;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    h1 {
+        text-align: center;
+    }
+
+    h2 {
+        text-align: center;
+    }
+
+    #players {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .player {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0 20px;
+    }
+
+    .player img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 1px solid white;
+    }
+
+    .player h1 {
+        margin: 0;
+    }
+
+
+    #board {
+        margin-left: 50%;
+        transform: translateX(-50%);
+        margin-top: 50px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        color: black;
+        font-size: 20px;
+        cursor: pointer;
+        color: white;
+    }
+
+    .row {
+        display: flex;
+        justify-content: center;
+    }
+
+    .cell {
+        width: 100px;
+        height: 100px;
+        border: 1px solid white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .cell:hover {
+        background-color: #24272f;
+    }
+</style>
+</head>
+<body>
+    <h1>Tic Tac Toe</h1>
+    <h2>
+        Turn: <span id="turn"></span>
+    </h2>
+    <div id="players">
+        <div class="player">
+            <img src="" alt="">
+            <span id="username"></span>
+            <h1>
+                X
+            </h1>
+        </div>
+
+        <span>
+            VS
+        </span>
+
+        <div class="player">
+            <img src="" alt="">
+            <span id="username"></span>
+            <h1>
+                O
+            </h1>
+        </div>
+    </div>
+    <div id="board"></div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const id = location.pathname.split('/')[2];
+    const socket = io('/game', { query: { id } });
+    const boardElement = document.getElementById('board');
+
+    socket.on('connect', () => {
+        console.log('connected');
+    });
+
+    for (let i = 0; i < 3; i++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.id = `row${i}`;
+        
+        for (let j = 0; j < 3; j++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `${i}${j}`;
+            row.appendChild(cell);
+        }
+
+        boardElement.appendChild(row);
+    }
+
+    socket.on('start', (X, O) => {
+        const playersElement = document.getElementById('players');
+    
+        const player1 = playersElement.children[0];
+        const player2 = playersElement.children[2];
+
+        player1.children[0].src = `https://cdn.discordapp.com/avatars/${O.id}/${O.avatar}.png`;
+        player1.children[1].innerHTML = O.username;
+
+        player2.children[0].src = `https://cdn.discordapp.com/avatars/${X.id}/${X.avatar}.png`;
+        player2.children[1].innerHTML = X.username;
+
+    });
+
+    socket.on('move', (turn, row, col) => {
+        const cell = document.getElementById(`${row}${col}`);
+        cell.innerHTML = turn;
+    });
+
+    socket.on("error", (message) => {
+        alert(message);
+    });
+
+    const cells = document.getElementsByClassName('cell');
+    socket.on("move-request", (cb) => {
+        for (let i = 0; i < cells.length; i++) {
+            if (cells[i].innerHTML === '') {
+                cells[i].style.cursor = 'pointer';
+                cells[i].addEventListener('click', () => {
+                    cb({
+                        row: Math.floor(i / 3),
+                        col: i % 3
+                    });
+
+                    for (let j = 0; j < cells.length; j++) {
+                        cells[j].removeEventListener('click', () => {});
+                    }
+                });
+            }
+        }
+    });
+
+    socket.on("turn", (turn) => {
+        document.getElementById('turn').innerHTML = turn;
+    });
+
+    socket.on("game-end", (winner, newElo) => {
+    
+        document.body.innerHTML = `
+            <h1 id="winner">
+                ${winner ? winner + " won!" : 'Draw'}
+            </h1>
+            <h2 id="newelo">
+                New elo: ${newElo[socket.id]}
+            </h2>
+        `;
+
+        setTimeout(() => {
+            window.location.href = '/lobby';
+        }, 1000);
+    });
+</script>
+</html>

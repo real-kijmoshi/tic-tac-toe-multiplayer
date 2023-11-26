@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lobby</title>
+</head>
+<style>
+    body {
+        background-color: #282c34;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+
+    }
+
+    h1 {
+        text-align: center;
+    }
+
+    #join {
+        margin-left: 50%;
+        transform: translateX(-50%);
+        margin-top: 50px;
+        padding: 10px 20px;
+        border-radius: 5px;
+        background-color: #61dafb;
+        color: black;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    #join:hover {
+        background-color: #282c34;
+        color: white;
+    }
+
+    table {
+        position: absolute;
+        left: 0;
+        top: 0;
+        border-collapse: collapse;
+        width: 30%;
+        margin: 2px;
+        border: 1px solid #ddd;
+        font-size: 18px;        
+    }
+
+    th, td {
+        text-align: left;
+        padding: 15px;
+    }
+
+    tr:nth-child(even) {
+        background-color: #1c1f25;
+    }
+
+    tbody > tr:hover {
+        background-color: #191c20;
+    }
+
+    thead > tr {
+        background-color: #282c34;
+        text-align: center;
+    }
+
+
+
+
+</style>
+
+<body>
+    <h1>
+        Hi <%= user.username %>
+    </h1>
+
+    <Button id="join">
+        join matchmacking
+    </Button>
+
+    <table>
+        <thead>
+            <tr>
+                <th colspan="5">Leaderboard</th>
+            </tr>
+        </thead>
+        <tr>
+            <th>Rank</th>
+            <th>Username</th>
+            <th>elo</th>
+            <th>Wins</th>
+            <th>Losses</th>
+        </tr>
+    </table>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    const join = document.getElementById('join');
+
+    join.addEventListener('click', () => {
+        socket.emit('join');
+        
+        join.disabled = true;
+        join.style.backgroundColor = '#282c34';
+        join.style.color = 'white';
+        join.style.cursor = 'default';
+        join.style.border = 'none';
+
+        //hover
+        join.addEventListener('mouseover', () => {
+            join.style.backgroundColor = '#282c34';
+            join.style.color = 'white';
+        });
+        
+        join.innerHTML = 'Searching for a match...';
+    });
+
+    socket.on('match', (id) => {
+        window.location.href = '/game/' + id;
+    });
+
+    const table = document.querySelector("table");
+    const tbody = document.createElement("tbody");
+    table.appendChild(tbody);
+    socket.on("leaderboard", (leaderboard) => {
+        tbody.innerHTML = "";
+
+        for (let i = 0; i < leaderboard.length; i++) {
+            /*
+                            id: key[1],
+                rating: db.get(`users.${key[1]}.rating`),
+                username: db.get(`users.${key[1]}.username`),
+                discriminator: db.get(`users.${key[1]}.discriminator`),
+                avatar: db.get(`users.${key[1]}.avatar`),
+                wins: db.get(`users.${key[1]}.wins`),
+                losses: db.get(`users.${key[1]}.losses`),
+                draws: db.get(`users.${key[1]}.draws`),
+                games: db.get(`users.${key[1]}.games`),
+            */
+
+            const tr = document.createElement("tr");
+            const rank = document.createElement("td");
+            const username = document.createElement("td");
+            const elo = document.createElement("td");
+            const wins = document.createElement("td");
+            const losses = document.createElement("td");
+
+            rank.innerHTML = i + 1;
+            username.innerHTML = leaderboard[i].username + "#" + leaderboard[i].discriminator;
+            elo.innerHTML = leaderboard[i].rating;
+            wins.innerHTML = leaderboard[i].wins;
+            losses.innerHTML = leaderboard[i].losses;
+            
+            tr.appendChild(rank);
+            tr.appendChild(username);
+            tr.appendChild(elo);
+            tr.appendChild(wins);
+            tr.appendChild(losses);
+
+            tbody.appendChild(tr);
+        }
+    });
+</script>
+</html>
