@@ -5,3 +5,5 @@
 - Save all games
 - Train AI 
 - Add bots
+
+- make or implement better db (i have some errors with better-sqlite3 so i wrote this)
